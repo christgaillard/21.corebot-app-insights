@@ -36,6 +36,7 @@ class DateResolverDialog(CancelAndHelpDialog):
         waterfall_dialog = WaterfallDialog(
             WaterfallDialog.__name__ + "2", [self.initial_step, self.final_step]
         )
+
         waterfall_dialog.telemetry_client = telemetry_client
 
         self.add_dialog(date_time_prompt)
@@ -48,7 +49,6 @@ class DateResolverDialog(CancelAndHelpDialog):
     ) -> DialogTurnResult:
         """Prompt for the date."""
         timex = step_context.options
-
         prompt_msg = "On what date would you like to travel?"
         reprompt_msg = (
             "I'm sorry, for best results, please enter your travel "
@@ -64,6 +64,8 @@ class DateResolverDialog(CancelAndHelpDialog):
                     retry_prompt=MessageFactory.text(reprompt_msg),
                 ),
             )
+
+
 
         # We have a Date we just need to check it is unambiguous.
         if "definite" in Timex(timex).types:

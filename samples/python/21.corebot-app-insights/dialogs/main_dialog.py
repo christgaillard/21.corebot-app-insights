@@ -76,10 +76,12 @@ class MainDialog(ComponentDialog):
         )
 
     async def act_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
+
         if not self._luis_recognizer.is_configured:
             # LUIS is not configured, we just run the BookingDialog path with an empty BookingDetailsInstance.
             return await step_context.begin_dialog(
                 self._booking_dialog_id, BookingDetails()
+
             )
 
         # Call LUIS and gather any potential booking details. (Note the TurnContext has the response to the prompt.)
@@ -125,7 +127,7 @@ class MainDialog(ComponentDialog):
             # If the call to the booking service was successful tell the user.
             # time_property = Timex(result.travel_date)
             # travel_date_msg = time_property.to_natural_language(datetime.now())
-            msg_txt = f"I have you booked to {result.destination} from {result.origin} on {result.travel_date}"
+            msg_txt = f"I have you booked to {result.destination} from {result.origin} on {result.travel_date} " f"return on {result.return_date}" f"with a budget of :{result.travel_budget}"
             message = MessageFactory.text(msg_txt, msg_txt, InputHints.ignoring_input)
             await step_context.context.send_activity(message)
 
@@ -141,12 +143,12 @@ class MainDialog(ComponentDialog):
         In some cases LUIS will recognize the From and To composite entities as a valid cities but the From and To Airport values
         will be empty if those entity values can't be mapped to a canonical item in the Airport.
         """
-        if luis_result.unsupported_airports:
-            message_text = (
-                f"Sorry but the following airports are not supported:"
-                f" {', '.join(luis_result.unsupported_airports)}"
-            )
-            message = MessageFactory.text(
-                message_text, message_text, InputHints.ignoring_input
-            )
-            await context.send_activity(message)
+        # if luis_result.unsupported_airports:
+        #     message_text = (
+        #         f"Sorry but the following airports are not supported:"
+        #         f" {', '.join(luis_result.unsupported_airports)}"
+        #     )
+        #     message = MessageFactory.text(
+        #         message_text, message_text, InputHints.ignoring_input
+        #     )
+        #     await context.send_activity(message)

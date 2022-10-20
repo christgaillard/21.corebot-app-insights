@@ -32,14 +32,16 @@ class BookingDialog(CancelAndHelpDialog):
                 self.destination_step,
                 self.origin_step,
                 self.travel_date_step,
-                # self.confirm_step,
+                self.return_date_step,
+                self.travel_budget_step,
+                self.confirm_step,
                 self.final_step,
             ],
         )
         waterfall_dialog.telemetry_client = telemetry_client
 
         self.add_dialog(text_prompt)
-        # self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__))
+        self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__))
         self.add_dialog(
             DateResolverDialog(DateResolverDialog.__name__, self.telemetry_client)
         )
@@ -89,6 +91,7 @@ class BookingDialog(CancelAndHelpDialog):
 
         # Capture the results of the previous step
         booking_details.origin = step_context.result
+
         if not booking_details.travel_date or self.is_ambiguous(
             booking_details.travel_date
         ):
@@ -98,6 +101,46 @@ class BookingDialog(CancelAndHelpDialog):
 
         return await step_context.next(booking_details.travel_date)
 
+    async def return_date_step(
+        self, step_context: WaterfallStepContext
+    ) -> DialogTurnResult:
+        """Prompt for return date.
+        This will use the DATE_RESOLVER_DIALOG."""
+
+        booking_details = step_context.options
+
+        # Capture the results of the previous step
+        booking_details.travel_date = step_context.result
+
+        if not booking_details.return_date :
+              return await step_context.begin_dialog(
+                DateResolverDialog.__name__, booking_details.return_date
+            )  # pylint: disable=line-too-long
+
+        return await step_context.next(booking_details.return_date)
+
+    async def travel_budget_step(
+        self, step_context: WaterfallStepContext
+    ) -> DialogTurnResult:
+        """Prompt for budget date.
+        This will use the DATE_RESOLVER_DIALOG."""
+
+        booking_details = step_context.options
+
+        # Capture the results of the previous step
+        booking_details.return_date = step_context.result
+
+        if booking_details.travel_budget is None :
+            return await step_context.prompt(
+                TextPrompt.__name__,
+                PromptOptions(
+                    prompt=MessageFactory.text("What budget do  you have for travelling?")
+                ),
+            )  # pylint: disable=line-too-long
+
+        return await step_context.next(booking_details.travel_budget)
+
+
     async def confirm_step(
         self, step_context: WaterfallStepContext
     ) -> DialogTurnResult:
@@ -105,22 +148,26 @@ class BookingDialog(CancelAndHelpDialog):
         booking_details = step_context.options
 
         # Capture the results of the previous step
-        booking_details.travel_date = step_context.result
+        booking_details.travel_budget = step_context.result
+
         msg = (
             f"Please confirm, I have you traveling to: { booking_details.destination }"
-            f" from: { booking_details.origin } on: { booking_details.travel_date}."
+            f" from: { booking_details.origin } on: { booking_details.travel_date} "
+            f" return on :{ booking_details.return_date} "
+            f" with a budget of : {booking_details.travel_budget}"
         )
 
         # Offer a YES/NO prompt.
         return await step_context.prompt(
             ConfirmPrompt.__name__, PromptOptions(prompt=MessageFactory.text(msg))
-        )
+            )
+
 
     async def final_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         """Complete the interaction and end the dialog."""
         if step_context.result:
             booking_details = step_context.options
-            booking_details.travel_date = step_context.result
+            #booking_details.travel_date = step_context.result
 
             return await step_context.end_dialog(booking_details)
 
